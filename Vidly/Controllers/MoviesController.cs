@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -10,29 +11,16 @@ namespace Vidly.Controllers
 {
     public class MoviesController : Controller
     {
-        public List<Movie> movies = new List<Movie>
+        private ApplicationDbContext _context;
+
+        public MoviesController()
         {
-            new Movie { Name = "Shrek" },
-            new Movie { Name = "Wall-e" }
-        };
+            _context = new ApplicationDbContext();
+        }
 
-        // GET: Movies/Random
-        public ActionResult Random()
+        protected override void Dispose(bool disposing)
         {
-            var movie = new Movie() { Name = "Shrek!" };
-            var customers = new List<Customer>
-            {
-                new Customer { Name = "Customer 1" },
-                new Customer { Name = "Customer 2" }
-            };
-
-            var viewModel = new RandomMovieViewModel
-            {
-                Movie = movie,
-                Customers = customers
-            };
-
-            return View(viewModel);
+            _context.Dispose();
         }
 
         public ActionResult Edit(int movieid)
@@ -43,7 +31,17 @@ namespace Vidly.Controllers
         // GET: Movies
         public ActionResult Index()
         {
+            var movies = _context.Movies.Include(c => c.Genre).ToList();
             return View(movies);
+        }
+
+        public ActionResult Details(int id)
+        {
+            var movie = _context.Movies.Include(c => c.Genre).SingleOrDefault(c => c.id == id);
+            if (movie == null)
+                return HttpNotFound();
+
+            return View(movie);
         }
 
         [Route("movies/released/{year}/{month:regex(\\d{2}):range(1,12)}")]
